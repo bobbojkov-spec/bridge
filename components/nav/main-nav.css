@@ -1,0 +1,174 @@
+/* HEADER WRAPPER */
+.site-header {
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  background: #ffffff;
+  transition: all 0.25s ease;
+  border-bottom: 1px solid transparent;
+}
+
+.site-header.is-sticky {
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+
+/* MAIN INNER GRID (MOBILE: hamburger left, logo center, icons right) */
+.site-header-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: clamp(12px, 3vw, 22px) clamp(16px, 4vw, 40px);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+}
+
+/* MOBILE HAMBURGER */
+.mobile-toggle {
+  display: none;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  justify-self: start;
+}
+
+.mobile-toggle span,
+.mobile-toggle span::before,
+.mobile-toggle span::after {
+  content: "";
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: #000;
+  position: relative;
+  border-radius: 2px;
+}
+
+.mobile-toggle span::before { top: -6px; position: absolute; }
+.mobile-toggle span::after  { top:  6px; position: absolute; }
+
+/* LOGO */
+.logo-wrap {
+  text-align: center;
+  justify-self: center;
+}
+
+.logo-img {
+  height: auto;
+  width: auto;
+  max-height: 40px;
+}
+
+/* DESKTOP RIGHT SIDE (MENU + ICONS) */
+.right-wrap {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 32px);
+  justify-self: end;
+}
+
+/* DESKTOP MENU */
+.main-menu {
+  display: flex;
+  align-items: center;
+  gap: clamp(20px, 3vw, 40px);
+}
+
+.main-menu a {
+  font-family: var(--font-poppins), 'Poppins', sans-serif;
+  font-size: clamp(0.8rem, 0.9vw, 1rem);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #1d1d1d;
+  text-decoration: none;
+  position: relative;
+  padding-bottom: 4px;
+}
+
+.main-menu a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 0%;
+  background: #fde4d9;
+  transition: width 0.25s ease;
+}
+
+.main-menu a:hover::after {
+  width: 60%;
+}
+
+/* ICONS */
+.icons {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1d1d1d;
+  padding: 8px;
+  transition: opacity 0.25s ease;
+}
+
+.icon-btn:hover {
+  opacity: 0.6;
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* MOBILE RULES */
+@media (max-width: 1024px) {
+
+  .mobile-toggle { display: inline-flex; }
+
+  .main-menu { display: none; }
+
+  /* MOBILE NAV PANEL */
+  .mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: white;
+    width: 100%;
+    padding: 20px 24px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    transform: scaleY(0);
+    opacity: 0;
+    transition: 0.2s ease;
+    transform-origin: top;
+    pointer-events: none;
+  }
+
+  .mobile-nav.open {
+    transform: scaleY(1);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobile-nav a {
+    font-family: var(--font-poppins), 'Poppins', sans-serif;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    color: #1d1d1d;
+    font-size: 0.95rem;
+  }
+}
+

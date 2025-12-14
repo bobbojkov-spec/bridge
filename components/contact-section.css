@@ -1,0 +1,110 @@
+.contact-section {
+  padding: clamp(80px, 10vw, 120px) 20px;
+  background-color: #1a1a1a;
+  color: #fff;
+}
+
+.contact-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.contact-content {
+  text-align: center;
+}
+
+.contact-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 35px;
+  line-height: 40px;
+  font-weight: 500;
+  text-transform: uppercase;
+  margin: 0 0 20px 0;
+  color: #fff;
+}
+
+@media (min-width: 768px) {
+  .contact-title {
+    font-size: clamp(35px, 4vw, 50px);
+    line-height: clamp(40px, 5vw, 60px);
+  }
+}
+
+.contact-subtitle {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(14px, 1.5vw, 16px);
+  font-weight: 300;
+  margin: 0 0 clamp(40px, 6vw, 60px) 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.contact-info {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(30px, 5vw, 50px);
+  margin-bottom: clamp(40px, 6vw, 60px);
+}
+
+@media (min-width: 768px) {
+  .contact-info {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.contact-item {
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .contact-item {
+    text-align: left;
+  }
+}
+
+.contact-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 12px 0;
+}
+
+.contact-value {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(14px, 1.5vw, 16px);
+  font-weight: 300;
+  color: #fff;
+  text-decoration: none;
+  display: block;
+  transition: color 0.3s ease;
+}
+
+.contact-value:hover {
+  color: #D97757;
+}
+
+.contact-cta {
+  display: inline-block;
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #fff;
+  background-color: #D97757;
+  padding: 14px 32px;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.contact-cta:hover {
+  background-color: #c4694a;
+  transform: translateY(-2px);
+}
+

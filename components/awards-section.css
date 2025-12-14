@@ -1,0 +1,78 @@
+.awards-section {
+  padding: clamp(60px, 8vw, 100px) 20px;
+  background-color: #f8f8f8;
+}
+
+.awards-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.awards-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 35px;
+  line-height: 40px;
+  font-weight: 500;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0 0 clamp(40px, 6vw, 60px) 0;
+  color: #211f1f;
+}
+
+@media (min-width: 768px) {
+  .awards-title {
+    font-size: clamp(35px, 4vw, 50px);
+    line-height: clamp(40px, 5vw, 60px);
+  }
+}
+
+.awards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: clamp(20px, 3vw, 40px);
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .awards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .awards-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.award-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.award-image {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.award-placeholder {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.award-text {
+  font-family: "Poppins", sans-serif;
+  font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+  font-weight: 500;
+  color: #666;
+  text-align: center;
+}
+

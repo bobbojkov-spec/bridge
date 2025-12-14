@@ -1,0 +1,117 @@
+.designers-section {
+  width: 100%;
+  background: #fff;
+  padding: clamp(60px, 8vw, 100px) 0;
+}
+
+.designers-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 40px);
+}
+
+.designers-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(40px, 6vw, 60px);
+  align-items: center;
+}
+
+/* Desktop: side by side layout */
+@media (min-width: 1024px) {
+  .designers-layout {
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(60px, 8vw, 100px);
+  }
+}
+
+.designers-text {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 3vw, 30px);
+}
+
+.designers-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-kicker {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #666;
+  margin: 0;
+}
+
+.section-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 35px;
+  line-height: 40px;
+  font-style: normal;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: #211f1f;
+  margin: 0;
+}
+
+.section-body-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(14px, 1.5vw, 16px);
+  font-weight: 300;
+  line-height: 1.8;
+  color: #666;
+  margin: 0;
+  max-width: 600px;
+}
+
+.read-more-button {
+  display: inline-block;
+  padding: 14px 32px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #211f1f;
+  background: transparent;
+  border: 1px solid #211f1f;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+  margin-top: 10px;
+}
+
+.read-more-button:hover {
+  background: #211f1f;
+  color: #fff;
+}
+
+.designers-media {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.designers-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  display: block;
+}
+
+/* Mobile: image first, then text */
+@media (max-width: 1023px) {
+  .designers-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .designers-media {
+    order: -1;
+  }
+}
+

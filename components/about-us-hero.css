@@ -1,0 +1,85 @@
+.about-hero-section {
+  padding: clamp(60px, 8vw, 120px) 20px;
+  background-color: #fff;
+}
+
+.about-hero-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(40px, 6vw, 80px);
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .about-hero-container {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.about-hero-content {
+  text-align: center;
+}
+
+@media (min-width: 1024px) {
+  .about-hero-content {
+    text-align: left;
+  }
+}
+
+.about-hero-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 35px;
+  line-height: 40px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: #211f1f;
+  margin: 0 0 clamp(30px, 4vw, 50px) 0;
+}
+
+@media (min-width: 768px) {
+  .about-hero-title {
+    font-size: clamp(35px, 4vw, 50px);
+    line-height: clamp(40px, 5vw, 60px);
+  }
+}
+
+.about-hero-text-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 3vw, 30px);
+}
+
+.about-hero-header-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(14px, 1.5vw, 16px);
+  font-weight: 300;
+  line-height: 1.8;
+  color: #666;
+  margin: 0;
+}
+
+.about-hero-detail-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(14px, 1.5vw, 16px);
+  font-weight: 300;
+  line-height: 1.8;
+  color: #666;
+  margin: 0;
+}
+
+.about-hero-image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.about-hero-image {
+  object-fit: cover;
+  object-position: center;
+}
+
