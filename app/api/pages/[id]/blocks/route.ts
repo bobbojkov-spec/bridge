@@ -178,7 +178,7 @@ export async function POST(
     if (blockPosition === undefined) {
       const existingBlocks = await getPageBlocks(pageId);
       blockPosition = existingBlocks.length > 0 
-        ? Math.max(...existingBlocks.map(b => b.position)) + 1 
+        ? Math.max(...existingBlocks.map((b: any) => b.position)) + 1 
         : 0;
     }
 
