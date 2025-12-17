@@ -1310,6 +1310,8 @@ function BlockEditor({
   onToggle,
   onOpenMediaPicker,
   fetchMediaById,
+  dragHandleProps,
+  isDragging,
 }: BlockEditorProps) {
   const [localData, setLocalData] = useState(block.data);
   const [expanded, setExpanded] = useState(true);
