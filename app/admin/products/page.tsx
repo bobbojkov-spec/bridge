@@ -1448,7 +1448,7 @@ export default function ProductsPage() {
               const prevImages = Array.isArray(prevValues.images) ? prevValues.images : [];
               const currImages = Array.isArray(currentValues.images) ? currentValues.images : [];
               return prevImages.length !== currImages.length || 
-                     prevImages.some((img, i) => img !== currImages[i]);
+                     prevImages.some((img: string, i: number) => img !== currImages[i]);
             }}
           >
             {() => {
