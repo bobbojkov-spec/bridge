@@ -283,12 +283,7 @@ export default function PagesPage() {
                   }
                   
                   if (errorCode === 'DUPLICATE_SLUG') {
-                    message.error({
-                      content: errorMessage,
-                      description: errorDetails,
-                      duration: 5,
-                    });
-                    return;
+                    message.error(errorMessage);
                   }
                 } else {
                   // Not a valid JSON object
