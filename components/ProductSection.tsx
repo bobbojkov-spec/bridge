@@ -1,13 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { featuredProducts } from "@/lib/products";
 import "./product-section.css";
+
+interface FeaturedProduct {
+  id: number;
+  name: string;
+  slug: string;
+  price: number;
+  currency: string;
+  image: string;
+}
 
 export default function ProductSection() {
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchFeaturedProducts();
+  }, []);
+
+  const fetchFeaturedProducts = async () => {
+    try {
+      const response = await fetch('/api/settings/featured-products/frontend');
+      const result = await response.json();
+      if (result.data && Array.isArray(result.data)) {
+        setFeaturedProducts(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching featured products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleFavorite = (productId: number) => {
     setFavorites((prev) => {
@@ -20,6 +48,22 @@ export default function ProductSection() {
       return newSet;
     });
   };
+
+  if (loading) {
+    return (
+      <section className="product-section">
+        <div className="product-section-container">
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            Loading featured products...
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (featuredProducts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="product-section">
@@ -84,7 +128,10 @@ export default function ProductSection() {
                     <Link href={`/shop/product/${product.slug}`} className="product-name">
                       {product.name}
                     </Link>
-                  <p className="product-price">€{product.price.replace('$', '').replace('USD', '').trim()}</p>
+                  <p className="product-price">
+                    {product.currency === 'EUR' ? '€' : product.currency === 'USD' ? '$' : ''}
+                    {typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
+                  </p>
               </div>
             </article>
           ))}

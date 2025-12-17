@@ -1,85 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { getProductBySlug, Product } from "@/lib/products";
 import "./product-detail.css";
 
 interface ProductDetailProps {
   slug: string;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  price: number;
-  currency: string;
-  images: string[];
-  sku?: string;
-  category?: string;
-  tags?: string[];
-  additionalInfo?: {
-    weight?: string;
-    dimensions?: string;
-    material?: string;
-    careInstructions?: string;
-  };
-}
-
 export default function ProductDetail({ slug }: ProductDetailProps) {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  const product = getProductBySlug(slug);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
   const [isWishlisted, setIsWishlisted] = useState(false);
-
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        setLoading(true);
-        // Try to fetch by slug first, then by ID if slug is numeric
-        let productId = slug;
-        if (isNaN(Number(slug))) {
-          // If slug is not numeric, we need to find product by slug
-          // For now, fetch all and filter, or use ID
-          const response = await fetch('/api/products');
-          const result = await response.json();
-          if (result.data && Array.isArray(result.data)) {
-            const found = result.data.find((p: Product) => p.slug === slug);
-            if (found) {
-              productId = found.id;
-            }
-          }
-        }
-        
-        const response = await fetch(`/api/products/${productId}`);
-        const result = await response.json();
-        
-        if (result.data) {
-          setProduct(result.data);
-        }
-      } catch (error) {
-        console.error('Error fetching product:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduct();
-  }, [slug]);
-
-  if (loading) {
-    return (
-      <section className="product-detail-section">
-        <div className="product-detail-container">
-          <p>Loading product...</p>
-        </div>
-      </section>
-    );
-  }
 
   if (!product) {
     return (
@@ -135,8 +71,11 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
             
             <div className="product-detail-price">
               <span className="current-price">
-                €{typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
+                {product.price}
               </span>
+              {product.originalPrice && (
+                <span className="original-price">{product.originalPrice}</span>
+              )}
             </div>
 
             {/* Quantity and Add to Cart in one row */}
@@ -269,10 +208,10 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
                               <td>{product.additionalInfo.material}</td>
                             </tr>
                           )}
-                          {product.additionalInfo.careInstructions && (
+                          {product.additionalInfo.care && (
                             <tr>
                               <th>Care Instructions</th>
-                              <td>{product.additionalInfo.careInstructions}</td>
+                              <td>{product.additionalInfo.care}</td>
                             </tr>
                           )}
                         </tbody>
