@@ -30,7 +30,7 @@ export async function GET(
       ctaText: slide.cta_text || '',
       ctaLink: slide.cta_link || '',
       order: slide.order || 0,
-      active: slide.active === 1 || slide.active === true,
+      active: Boolean(slide.active),
       createdAt: slide.created_at ? new Date(slide.created_at).toISOString() : new Date().toISOString(),
       updatedAt: slide.updated_at ? new Date(slide.updated_at).toISOString() : new Date().toISOString(),
     };
