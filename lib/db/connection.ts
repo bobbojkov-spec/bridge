@@ -1,94 +1,47 @@
-import mysql from 'mysql2/promise';
+// Database connection - PostgreSQL version
+// This file has been migrated from MySQL to PostgreSQL
+// Uses local PostgreSQL for development, can switch to Supabase for production
 
-// Database connection configuration
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'bridge_db',
-  waitForConnections: true,
-  connectionLimit: 5,
-  queueLimit: 0,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 0,
-  acquireTimeout: 60000,
-  timeout: 60000,
-};
+// Use Supabase PostgreSQL connection (can switch back to local for development)
+import { query as pgQuery, queryOne as pgQueryOne, insertAndGetId as pgInsertAndGetId } from './connection-pg';
 
-// Create connection pool
-let pool: mysql.Pool | null = null;
+// Re-export PostgreSQL functions with MySQL-compatible names
+export const query = pgQuery;
+export const queryOne = pgQueryOne;
 
-export function getPool(): mysql.Pool {
-  if (!pool) {
-    pool = mysql.createPool(dbConfig);
-  }
-  return pool;
-}
-
-// Get a connection from the pool
-export async function getConnection(): Promise<mysql.PoolConnection> {
-  const pool = getPool();
-  return await pool.getConnection();
-}
-
-// Execute a query
-export async function query<T = any>(
-  sql: string,
+// Helper function for inserts that need to return the ID
+// In PostgreSQL, we use RETURNING id instead of insertId
+export async function insertAndGetId(
+  sqlQuery: string,
   params?: any[]
-): Promise<T[]> {
-  let connection;
-  try {
-    connection = await getConnection();
-    const [rows] = await connection.execute(sql, params || []);
-    return rows as T[];
-  } catch (error: any) {
-    console.error('Query error:', {
-      sql: sql.substring(0, 100),
-      paramsCount: params?.length || 0,
-      message: error?.message,
-      code: error?.code,
-      errno: error?.errno,
-    });
-    throw error;
-  } finally {
-    if (connection) {
-      try {
-        connection.release();
-      } catch (releaseError) {
-        console.error('Error releasing connection:', releaseError);
-      }
-    }
-  }
+): Promise<number> {
+  return await pgInsertAndGetId(sqlQuery, params);
 }
 
-// Execute a query and return the first result
-export async function queryOne<T = any>(
-  sql: string,
+// For backward compatibility with MySQL insertId pattern
+// This converts MySQL-style inserts to PostgreSQL
+export async function queryWithInsertId<T = any>(
+  sqlQuery: string,
   params?: any[]
-): Promise<T | null> {
-  const results = await query<T>(sql, params);
-  return results.length > 0 ? results[0] : null;
-}
-
-// Close the connection pool
-export async function closePool(): Promise<void> {
-  if (pool) {
-    await pool.end();
-    pool = null;
+): Promise<{ insertId: number; rows: T[] }> {
+  // If it's an INSERT query, use insertAndGetId
+  if (sqlQuery.trim().toUpperCase().startsWith('INSERT')) {
+    const id = await insertAndGetId(sqlQuery, params);
+    return { insertId: id, rows: [] };
   }
+  
+  // Otherwise, just execute the query
+  const rows = await query<T>(sqlQuery, params);
+  return { insertId: 0, rows };
 }
 
 // Test database connection
 export async function testConnection(): Promise<boolean> {
   try {
-    const connection = await getConnection();
-    await connection.ping();
-    connection.release();
-    return true;
+    const { testConnection: pgTest } = await import('./connection-pg');
+    return await pgTest();
   } catch (error) {
     console.error('Database connection failed:', error);
     return false;
   }
 }
-
