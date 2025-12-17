@@ -519,7 +519,7 @@ export default function PagesPage() {
       });
 
       if (response.ok) {
-        message.success('Order saved', { duration: 2 });
+        message.success('Order saved', 2);
         setHasUnsavedChanges(false);
         fetchBlocks(editingPage.id);
       } else {
@@ -573,7 +573,7 @@ export default function PagesPage() {
       });
 
       if (response.ok) {
-        message.success('Order saved', { duration: 2 });
+        message.success('Order saved', 2);
         setHasUnsavedChanges(false);
         fetchBlocks(editingPage.id);
       } else {
