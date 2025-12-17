@@ -91,7 +91,7 @@ The event also included a digital color palette generator that translated physic
 
     const created = [];
     const updated = [];
-    const skipped = [];
+    const skipped: string[] = [];
     const errors = [];
 
     for (const article of articles) {
