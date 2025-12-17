@@ -38,12 +38,15 @@ export default function BlogSection() {
       const response = await fetch('/api/news?pageSize=100&activeOnly=true&publishStatus=published');
       const result = await response.json();
       
-      if (result.data) {
+      if (result.data && Array.isArray(result.data)) {
         // Sort by order and take first 3
         const sortedArticles = result.data
-          .sort((a: NewsArticle, b: NewsArticle) => a.order - b.order)
+          .sort((a: NewsArticle, b: NewsArticle) => (a.order || 0) - (b.order || 0))
           .slice(0, 3); // Show only first 3
         setArticles(sortedArticles);
+      } else {
+        console.warn('BlogSection: Unexpected API response format', result);
+        setArticles([]);
       }
     } catch (error) {
       console.error('Error fetching news articles:', error);

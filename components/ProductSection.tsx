@@ -74,12 +74,18 @@ export default function ProductSection() {
               <div className="product-image-wrapper">
                 <Link href={`/shop/product/${product.slug}`}>
                   <Image
-                    src={product.image}
+                    src={product.image || '/images/placeholder.jpg'}
                     alt={product.name}
                     width={400}
                     height={400}
                     className="product-image"
                     style={{ background: '#ffffff' }}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (target.src !== '/images/placeholder.jpg') {
+                        target.src = '/images/placeholder.jpg';
+                      }
+                    }}
                   />
                 </Link>
                 <div className="product-hover-icons">

@@ -1,21 +1,71 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getProductBySlug, Product } from "@/lib/products";
 import "./product-detail.css";
 
 interface ProductDetailProps {
   slug: string;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  sku: string;
+  description: string;
+  price: number;
+  currency: string;
+  images: string[];
+  categoryIds: number[];
+  tags: string[];
+  additionalInfo: {
+    weight: string;
+    dimensions: string;
+    material: string;
+    careInstructions: string;
+  } | null;
+}
+
 export default function ProductDetail({ slug }: ProductDetailProps) {
-  const product = getProductBySlug(slug);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
   const [isWishlisted, setIsWishlisted] = useState(false);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [slug]);
+
+  const fetchProduct = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/products/slug/${slug}`);
+      const result = await response.json();
+      if (result.data) {
+        setProduct(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching product:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <section className="product-detail-section">
+        <div className="product-detail-container">
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            Loading product...
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!product) {
     return (
@@ -42,11 +92,17 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
                   aria-label={`View image ${index + 1}`}
                 >
                   <Image
-                    src={image}
+                    src={image || '/images/placeholder.jpg'}
                     alt={`${product.name} view ${index + 1}`}
                     width={100}
                     height={100}
                     className="thumbnail-image"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (target.src !== '/images/placeholder.jpg') {
+                        target.src = '/images/placeholder.jpg';
+                      }
+                    }}
                   />
                 </button>
               ))}
@@ -62,6 +118,12 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
               height={600}
               className="main-product-image"
               priority
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (target.src !== '/images/placeholder.jpg') {
+                  target.src = '/images/placeholder.jpg';
+                }
+              }}
             />
           </div>
 
@@ -71,11 +133,9 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
             
             <div className="product-detail-price">
               <span className="current-price">
-                {product.price}
+                {product.currency === 'EUR' ? '€' : product.currency === 'USD' ? '$' : ''}
+                {typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
               </span>
-              {product.originalPrice && (
-                <span className="original-price">{product.originalPrice}</span>
-              )}
             </div>
 
             {/* Quantity and Add to Cart in one row */}
@@ -168,18 +228,13 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
                           <div className="product-meta-divider"></div>
                         </>
                       )}
-                      {product.category && (
+                      {product.tags && product.tags.length > 0 && (
                         <>
                           <div className="product-meta-item">
-                            <strong>Category:</strong> {product.category}
+                            <strong>Tags:</strong> {Array.isArray(product.tags) ? product.tags.join(", ") : product.tags}
                           </div>
                           <div className="product-meta-divider"></div>
                         </>
-                      )}
-                      {product.tags && product.tags.length > 0 && (
-                        <div className="product-meta-item">
-                          <strong>Tags:</strong> {Array.isArray(product.tags) ? product.tags.join(", ") : product.tags}
-                        </div>
                       )}
                     </div>
                   </div>
@@ -208,10 +263,10 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
                               <td>{product.additionalInfo.material}</td>
                             </tr>
                           )}
-                          {product.additionalInfo.care && (
+                          {product.additionalInfo.careInstructions && (
                             <tr>
                               <th>Care Instructions</th>
-                              <td>{product.additionalInfo.care}</td>
+                              <td>{product.additionalInfo.careInstructions}</td>
                             </tr>
                           )}
                         </tbody>

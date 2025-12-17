@@ -1,4 +1,4 @@
-import { query, queryOne } from '../connection';
+import { query, queryOne, insertAndGetId } from '../connection';
 import { MediaFile } from '../models';
 
 // Get all media files with pagination
@@ -23,13 +23,10 @@ export async function getMediaFiles(
 
   const offset = (page - 1) * pageSize;
   
-  // Build params array for the query (with LIMIT/OFFSET)
-  const queryParams = [...params];
-  queryParams.push(pageSize, offset);
-
-  const filesQuery = `SELECT id, filename, url, url_large, url_medium, url_thumb, mime_type, size, width, height, alt_text, caption, created_at FROM media_files WHERE ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+  // Use string interpolation for LIMIT/OFFSET (PostgreSQL compatible)
+  const filesQuery = `SELECT id, filename, url, url_large, url_medium, url_thumb, mime_type, size, width, height, alt_text, caption, created_at FROM media_files WHERE ${whereClause} ORDER BY created_at DESC LIMIT ${pageSize} OFFSET ${offset}`;
   
-  const files = await query<MediaFile>(filesQuery, queryParams);
+  const files = await query<MediaFile>(filesQuery, params);
 
   // For count query, use only the filter params (not LIMIT/OFFSET)
   const countQuery = `SELECT COUNT(*) as count FROM media_files WHERE ${whereClause}`;
@@ -50,7 +47,7 @@ export async function getMediaFileById(id: number): Promise<MediaFile | null> {
 
 // Create media file
 export async function createMediaFile(file: Omit<MediaFile, 'id' | 'created_at'>): Promise<number> {
-  const result = await query<{ insertId: number }>(
+  const mediaId = await insertAndGetId(
     `INSERT INTO media_files (filename, url, url_large, url_medium, url_thumb, mime_type, size, width, height, alt_text, caption)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
@@ -67,7 +64,7 @@ export async function createMediaFile(file: Omit<MediaFile, 'id' | 'created_at'>
       file.caption,
     ]
   );
-  return result[0]?.insertId || 0;
+  return mediaId;
 }
 
 // Delete media file

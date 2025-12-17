@@ -4,19 +4,31 @@ import { Pool } from 'pg';
 // This is better for local development than @vercel/postgres
 
 // Parse connection string or use defaults
+// For local development, always use localhost (ignore POSTGRES_URL which points to Supabase)
 function getConnectionConfig() {
-  const postgresUrl = process.env.POSTGRES_URL || 'postgresql://localhost:5432/bridge_db';
+  // Use POSTGRES_LOCAL_URL if set, otherwise default to localhost
+  const postgresUrl = process.env.POSTGRES_LOCAL_URL || 'postgresql://localhost:5432/bridge_db';
   
   // Parse connection string
-  const url = new URL(postgresUrl.replace('postgresql://', 'http://'));
-  
-  return {
-    host: url.hostname || 'localhost',
-    port: parseInt(url.port || '5432'),
-    database: url.pathname?.replace('/', '') || 'bridge_db',
-    user: url.username || process.env.USER || 'postgres',
-    password: url.password || undefined,
-  };
+  try {
+    const url = new URL(postgresUrl.replace('postgresql://', 'http://'));
+    
+    return {
+      host: url.hostname || 'localhost',
+      port: parseInt(url.port || '5432'),
+      database: url.pathname?.replace('/', '') || 'bridge_db',
+      user: url.username || process.env.USER || 'postgres',
+      password: url.password || undefined,
+    };
+  } catch {
+    // Fallback to direct localhost config
+    return {
+      host: 'localhost',
+      port: 5432,
+      database: 'bridge_db',
+      user: process.env.USER || 'postgres',
+    };
+  }
 }
 
 // Create connection pool

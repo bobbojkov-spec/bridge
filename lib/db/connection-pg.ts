@@ -7,9 +7,15 @@ function getConnectionConfig() {
   
   // Parse connection string or use defaults
   try {
-    const url = new URL(postgresUrl.replace('postgresql://', 'http://'));
+    const httpLikeUrl = new URL(postgresUrl.replace('postgresql://', 'http://'));
+    const hostname = httpLikeUrl.hostname;
+    const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
+
     return {
       connectionString: postgresUrl,
+      // Supabase (and most hosted Postgres providers) require TLS connections.
+      // Allow self-signed certs while developing locally against Supabase.
+      ssl: isLocalHost ? undefined : { rejectUnauthorized: false },
     };
   } catch {
     return {
@@ -82,9 +88,8 @@ export async function query<T = any>(
   try {
     const { query: pgQuery, pgParams } = convertMySQLToPostgreSQL(sqlQuery, params);
     
-    // Execute query using the client
-    // @vercel/postgres client.query() accepts query string and params array
-    const result = await db.query(pgQuery, pgParams);
+    // Execute query using the pool
+    const result = await pool.query(pgQuery, pgParams);
     
     // If query expects insertId (MySQL pattern), add it to the result
     // This handles cases where code expects { insertId: number } in the result
@@ -161,4 +166,3 @@ export async function testConnection(): Promise<boolean> {
     return false;
   }
 }
-

@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
 
     // Normalized response format: { data: [...], total: number, page: number, pageSize: number }
     // Also sets X-Total-Count header for Refine compatibility
-    const total = result.total || 0;
+    const total = typeof result.total === 'string' ? parseInt(result.total, 10) : (result.total || 0);
     
     return NextResponse.json({
       data: enrichedProducts || [],

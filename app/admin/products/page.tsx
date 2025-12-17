@@ -201,9 +201,12 @@ export default function ProductsPage() {
       const result = await response.json();
 
       if (result.data && result.data.url) {
-        const currentImages = imagesForm.getFieldValue('images') || [];
-        const newImages = [...currentImages, result.data.url];
-        imagesForm.setFieldsValue({ images: newImages });
+        // Only update form if the edit images modal is open
+        if (editImagesVisible) {
+          const currentImages = imagesForm.getFieldValue('images') || [];
+          const newImages = [...currentImages, result.data.url];
+          imagesForm.setFieldsValue({ images: newImages });
+        }
         message.success({ content: 'Image cropped and uploaded successfully', key: 'upload' });
         setCropVisible(false);
         setImageToCrop(null);
@@ -226,6 +229,7 @@ export default function ProductsPage() {
   };
 
   const fetchProducts = async () => {
+    console.log('🔄 fetchProducts called');
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -241,23 +245,66 @@ export default function ProductsPage() {
         params.append('active', activeFilter === 'active' ? 'true' : 'false');
       }
 
-      const response = await fetch(`/api/products?${params.toString()}`);
-      const result = await response.json();
-
-      if (result.data) {
-        setProducts(result.data);
-        setTotal(result.total || 0);
+      const url = `/api/products?${params.toString()}`;
+      console.log('📡 Fetching products from:', url);
+      
+      const response = await fetch(url);
+      console.log('📥 Response received:', { status: response.status, ok: response.ok, statusText: response.statusText });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API error response:', response.status, errorText);
+        throw new Error(`HTTP error! status: ${response.status}, ${errorText}`);
       }
-    } catch (error) {
-      message.error('Failed to fetch products');
-      console.error('Error fetching products:', error);
+      
+      const result = await response.json();
+      console.log('📦 Products API response:', { 
+        hasData: !!result.data, 
+        dataLength: result.data?.length, 
+        total: result.total,
+        hasError: !!result.error,
+        fullResult: result
+      });
+
+      if (result.error) {
+        console.error('❌ API returned error:', result.error, result.details);
+        message.error(result.error || 'Failed to fetch products');
+        setProducts([]);
+        setTotal(0);
+        return;
+      }
+
+      if (result.data && Array.isArray(result.data)) {
+        console.log('✅ Setting products:', result.data.length, 'items');
+        setProducts(result.data);
+        const totalValue = typeof result.total === 'string' ? parseInt(result.total, 10) : (result.total || 0);
+        setTotal(totalValue);
+        console.log('✅ Products state updated - count:', result.data.length, 'Total:', totalValue);
+      } else {
+        console.error('❌ No data in response or not an array:', { 
+          hasData: !!result.data, 
+          isArray: Array.isArray(result.data),
+          result 
+        });
+        setProducts([]);
+        setTotal(0);
+      }
+    } catch (error: any) {
+      console.error('❌ Exception in fetchProducts:', error);
+      console.error('❌ Error stack:', error.stack);
+      message.error(`Failed to fetch products: ${error.message || 'Unknown error'}`);
+      setProducts([]);
+      setTotal(0);
     } finally {
+      console.log('🏁 fetchProducts finished, setting loading to false');
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log('useEffect triggered - fetching products', { currentPage, pageSize, searchText, activeFilter });
     fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, pageSize, searchText, activeFilter]);
 
   const handleDelete = async (id: string) => {
@@ -387,8 +434,13 @@ export default function ProductsPage() {
         setTimeout(() => {
           // Convert categoryIds to numbers if they're strings
           const categoryIds = Array.isArray(product.categoryIds)
-            ? product.categoryIds.map((id: any) => typeof id === 'string' ? parseInt(id) : id)
+            ? product.categoryIds.map((id: any) => {
+                const numId = typeof id === 'string' ? parseInt(id, 10) : Number(id);
+                return isNaN(numId) ? id : numId;
+              })
             : [];
+          
+          console.log('Setting categoryIds:', categoryIds, 'Product categoryIds:', product.categoryIds);
           
           form.setFieldsValue({
             name: product.name || '',
@@ -399,7 +451,9 @@ export default function ProductsPage() {
             stockQuantity: product.stockQuantity || 0,
             active: product.active !== undefined ? product.active : true,
             categoryIds: categoryIds,
-            tags: Array.isArray(product.tags) ? product.tags.map((tag: string) => tag.toUpperCase()) : [],
+            tags: Array.isArray(product.tags) 
+              ? [...new Set(product.tags.map((tag: string) => tag.toUpperCase()))] // Remove duplicates
+              : [],
             weight: product.additionalInfo?.weight || '',
             dimensions: product.additionalInfo?.dimensions || '',
             material: product.additionalInfo?.material || '',
@@ -444,11 +498,12 @@ export default function ProductsPage() {
       const currentCanonicalUrl = editingProduct?.canonicalUrl || null;
 
       // Process tags - use form value if it exists (even if empty array), otherwise keep current
+      // Remove duplicates and normalize to uppercase
       const tagsArray = allValues.tags !== undefined
-        ? (Array.isArray(allValues.tags) 
-            ? allValues.tags.map((tag: string) => String(tag).toUpperCase().trim()).filter((tag: string) => tag.length > 0)
+        ? (Array.isArray(allValues.tags)
+            ? [...new Set(allValues.tags.map((tag: string) => String(tag).toUpperCase().trim()).filter((tag: string) => tag.length > 0))]
             : [])
-        : currentTags.map((tag: string) => String(tag).toUpperCase());
+        : [...new Set(currentTags.map((tag: string) => String(tag).toUpperCase()))];
       
       // Process categories - use form value if it exists (even if empty array), otherwise keep current
       const categoryIdsArray = allValues.categoryIds !== undefined
@@ -633,7 +688,7 @@ export default function ProductsPage() {
             {tags && tags.length > 0 ? (
               <>
                 {tags.map((tag, index) => (
-                  <Tag key={index} style={{ marginBottom: 4 }}>
+                  <Tag key={`${tag}-${index}`} style={{ marginBottom: 4 }}>
                     {tag}
                   </Tag>
                 ))}
@@ -688,6 +743,8 @@ export default function ProductsPage() {
           ),
     },
   ];
+
+  console.log('ProductsPage render - products:', products.length, 'loading:', loading, 'total:', total);
 
   return (
     <div>
@@ -768,11 +825,21 @@ export default function ProductsPage() {
         </Row>
 
         <div style={{ overflowX: 'auto', width: '100%' }}>
+          {/* Debug info - always show in dev */}
+          <div style={{ marginBottom: 10, padding: 10, background: '#f0f0f0', fontSize: 12, border: '1px solid #ccc' }}>
+            <strong>Debug:</strong> Products in state: {products?.length || 0}, Total: {total}, Loading: {loading ? 'Yes' : 'No'}
+            {products && products.length > 0 && (
+              <div style={{ marginTop: 5, fontSize: 11 }}>
+                First product: {products[0]?.name} (ID: {products[0]?.id})
+              </div>
+            )}
+          </div>
           <Table
             columns={columns}
-            dataSource={products}
-            rowKey="id"
+            dataSource={products || []}
+            rowKey={(record) => String(record.id)}
             loading={loading}
+            locale={{ emptyText: 'No products found' }}
             pagination={{
               current: currentPage,
               pageSize: pageSize,
@@ -876,8 +943,8 @@ export default function ProductsPage() {
               <Descriptions.Item label="Tags" span={1}>
                 {previewProduct.tags && previewProduct.tags.length > 0 ? (
                   <div>
-                    {previewProduct.tags.map((tag, index) => (
-                      <Tag key={index} style={{ marginBottom: 4 }}>
+                    {                    previewProduct.tags.map((tag, index) => (
+                      <Tag key={`${tag}-${index}`} style={{ marginBottom: 4 }}>
                         {tag}
                       </Tag>
                     ))}
@@ -1051,12 +1118,19 @@ export default function ProductsPage() {
                       <Form.Item
                         label="Categories"
                         name="categoryIds"
+                        valuePropName="value"
+                        getValueFromEvent={(checkedValues) => {
+                          // Ensure all values are numbers
+                          return Array.isArray(checkedValues) 
+                            ? checkedValues.map((v: any) => typeof v === 'string' ? parseInt(v, 10) : v)
+                            : [];
+                        }}
                       >
                         <Checkbox.Group style={{ width: '100%' }}>
                           <Row gutter={[16, 8]}>
                             {categories.map((cat) => (
                               <Col span={8} key={cat.id}>
-                                <Checkbox value={cat.id}>{cat.name}</Checkbox>
+                                <Checkbox value={Number(cat.id)}>{cat.name}</Checkbox>
                               </Col>
                             ))}
                           </Row>
@@ -1073,9 +1147,9 @@ export default function ProductsPage() {
                           style={{ width: '100%' }}
                           tokenSeparators={[',']}
                           onChange={(values) => {
-                            // Convert all tags to uppercase
-                            const upperTags = values.map((tag: string) => tag.toUpperCase());
-                            form.setFieldsValue({ tags: upperTags });
+                            // Convert all tags to uppercase and remove duplicates
+                            const uniqueTags = [...new Set(values.map((tag: string) => String(tag).toUpperCase().trim()).filter((tag: string) => tag.length > 0))];
+                            form.setFieldsValue({ tags: uniqueTags });
                           }}
                         />
                       </Form.Item>
@@ -1398,14 +1472,19 @@ export default function ProductsPage() {
                       });
                       const result = await response.json();
                       if (result.data && result.data.url) {
-                        const currentImages = imagesForm.getFieldValue('images') || [];
-                        const newImages = [...currentImages, result.data.url];
-                        imagesForm.setFieldsValue({ images: newImages });
-                        message.success({ content: 'Image uploaded successfully', key: 'upload' });
-                        // Force form update to show the new image
-                        setTimeout(() => {
+                        // Only update form if the edit images modal is open
+                        if (editImagesVisible) {
+                          const currentImages = imagesForm.getFieldValue('images') || [];
+                          const newImages = [...currentImages, result.data.url];
                           imagesForm.setFieldsValue({ images: newImages });
-                        }, 100);
+                          message.success({ content: 'Image uploaded successfully', key: 'upload' });
+                          // Force form update to show the new image
+                          setTimeout(() => {
+                            imagesForm.setFieldsValue({ images: newImages });
+                          }, 100);
+                        } else {
+                          message.success({ content: 'Image uploaded successfully', key: 'upload' });
+                        }
                       } else {
                         message.error({ content: result.error || 'Failed to upload image', key: 'upload' });
                       }
@@ -1664,10 +1743,20 @@ export default function ProductsPage() {
                       e.currentTarget.style.boxShadow = 'none';
                     }}
                     onClick={() => {
+                      // Only update form if the edit images modal is open
+                      if (!editImagesVisible) {
+                        message.warning('Please open the Edit Images modal first');
+                        return;
+                      }
                       const currentImages = imagesForm.getFieldValue('images') || [];
-                      imagesForm.setFieldsValue({ images: [...currentImages, file.url] });
-                      message.success('Image added to product');
-                      setMediaLibraryVisible(false);
+                      // Prevent duplicates - only add if not already in the array
+                      if (!currentImages.includes(file.url)) {
+                        imagesForm.setFieldsValue({ images: [...currentImages, file.url] });
+                        message.success('Image added to product');
+                        setMediaLibraryVisible(false);
+                      } else {
+                        message.info('Image already added');
+                      }
                     }}
                   >
                     <AntImage

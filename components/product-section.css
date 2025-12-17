@@ -13,30 +13,31 @@
 /* PRODUCT GRID */
 .product-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(30px, 4vw, 50px);
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(15px, 2vw, 20px);
   margin-bottom: clamp(40px, 6vw, 60px);
 }
 
-/* Tablet: 2 columns */
-@media (min-width: 768px) {
+/* Mobile: 3 columns */
+@media (max-width: 600px) {
   .product-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: clamp(30px, 4vw, 40px) clamp(20px, 3vw, 30px);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
-/* Desktop: 3 columns with irregular alignment */
-@media (min-width: 1024px) {
+/* Tablet: 4 columns */
+@media (min-width: 601px) and (max-width: 1024px) {
   .product-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: clamp(30px, 4vw, 50px) clamp(20px, 3vw, 40px);
+    grid-template-columns: repeat(4, 1fr);
+    gap: clamp(20px, 3vw, 30px);
   }
+}
 
-  /* Create slight irregular vertical alignment */
-  .product-card:nth-child(2),
-  .product-card:nth-child(5) {
-    margin-top: clamp(110px, calc(5vw + 70px), 140px);
+/* Desktop: 5 columns */
+@media (min-width: 1025px) {
+  .product-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: clamp(20px, 3vw, 30px);
   }
 }
 

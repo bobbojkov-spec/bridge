@@ -12,9 +12,30 @@
 
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 0;
   width: 100%;
+}
+
+/* Mobile: 3 columns */
+@media (max-width: 600px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Tablet: 4 columns */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Desktop: 5 columns */
+@media (min-width: 1025px) {
+  .gallery-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
 }
 
 .gallery-item {

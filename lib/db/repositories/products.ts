@@ -1,4 +1,4 @@
-import { query, queryOne } from '../connection';
+import { query, queryOne, insertAndGetId } from '../connection';
 import { Product, ProductImage, ProductCategory, ProductTag, ProductAdditionalInfo } from '../models';
 
 // Get all products with pagination - SIMPLIFIED VERSION
@@ -13,7 +13,7 @@ export async function getProducts(
 
   if (filters?.active !== undefined) {
     conditions.push('active = ?');
-    params.push(filters.active ? 1 : 0);
+    params.push(filters.active); // PostgreSQL uses boolean, not 1/0
   }
 
   if (filters?.categoryId) {
@@ -35,13 +35,16 @@ export async function getProducts(
   const offset = (sanitizedPage - 1) * sanitizedPageSize;
   
   // Get products with LIMIT and OFFSET (using string interpolation, not parameterized)
-  const productsQuery = `SELECT * FROM products ${whereSQL} ORDER BY created_at DESC LIMIT ${sanitizedPageSize} OFFSET ${offset}`;
+  // Sort alphabetically by name (case-insensitive for consistent ordering)
+  const productsQuery = `SELECT * FROM products ${whereSQL} ORDER BY LOWER(name) ASC, name ASC LIMIT ${sanitizedPageSize} OFFSET ${offset}`;
   const products = await query<Product>(productsQuery, params);
 
   // Get total count
   const countQuery = `SELECT COUNT(*) as count FROM products ${whereSQL}`;
-  const countResult = await query<{ count: number }>(countQuery, params);
-  const total = countResult[0]?.count || 0;
+  const countResult = await query<{ count: string | number }>(countQuery, params);
+  const total = typeof countResult[0]?.count === 'string' 
+    ? parseInt(countResult[0].count, 10) 
+    : (countResult[0]?.count || 0);
 
   return {
     products,
@@ -64,7 +67,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 // Get product images
 export async function getProductImages(productId: number): Promise<ProductImage[]> {
   return await query<ProductImage>(
-    'SELECT * FROM product_images WHERE product_id = ? ORDER BY `order` ASC',
+    'SELECT * FROM product_images WHERE product_id = ? ORDER BY "order" ASC',
     [productId]
   );
 }
@@ -98,7 +101,7 @@ export async function getProductAdditionalInfo(productId: number): Promise<Produ
 
 // Create product
 export async function createProduct(product: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<number> {
-  const result = await query<{ insertId: number }>(
+  const productId = await insertAndGetId(
     `INSERT INTO products (name, slug, sku, description, price, currency, stock_quantity, active, meta_title, meta_description)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
@@ -109,12 +112,12 @@ export async function createProduct(product: Omit<Product, 'id' | 'created_at' |
       product.price,
       product.currency,
       product.stock_quantity,
-      product.active ? 1 : 0,
+      product.active, // PostgreSQL uses boolean
       product.meta_title,
       product.meta_description,
     ]
   );
-  return result[0]?.insertId || 0;
+  return productId;
 }
 
 // Update product
@@ -124,14 +127,9 @@ export async function updateProduct(id: number, product: Partial<Omit<Product, '
 
   Object.entries(product).forEach(([key, value]) => {
     if (value !== undefined) {
-      // Convert boolean to int for MySQL
-      if (typeof value === 'boolean') {
-        fields.push(`${key} = ?`);
-        values.push(value ? 1 : 0);
-      } else {
-        fields.push(`${key} = ?`);
-        values.push(value);
-      }
+      // PostgreSQL uses boolean, not int
+      fields.push(`${key} = ?`);
+      values.push(value);
     }
   });
 

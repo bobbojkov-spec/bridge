@@ -1,50 +1,82 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import "./gallery-section.css";
 
-const galleryImages = [
-  {
-    id: 1,
-    src: "/images/insta-1.jpg",
-    alt: "Ceramic gallery image 1",
-    href: "#",
-  },
-  {
-    id: 2,
-    src: "/images/insta-2.jpg",
-    alt: "Ceramic gallery image 2",
-    href: "#",
-  },
-  {
-    id: 3,
-    src: "/images/insta-3.jpg",
-    alt: "Ceramic gallery image 3",
-    href: "#",
-  },
-  {
-    id: 4,
-    src: "/images/insta-4.jpg",
-    alt: "Ceramic gallery image 4",
-    href: "#",
-  },
-];
+interface GalleryImage {
+  id: number;
+  url: string;
+  alt_text: string | null;
+}
 
 export default function GallerySection() {
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchGalleryImages();
+  }, []);
+
+  const fetchGalleryImages = async () => {
+    try {
+      const response = await fetch('/api/media?pageSize=4');
+      const result = await response.json();
+      if (result.data && Array.isArray(result.data)) {
+        // Filter for images only and take first 4
+        const images = result.data
+          .filter((file: any) => file.mime_type?.startsWith('image/'))
+          .slice(0, 4)
+          .map((file: any) => ({
+            id: file.id,
+            url: file.url || file.url_large || file.url_medium || file.url_thumb || '/images/placeholder.jpg',
+            alt_text: file.alt_text || file.caption || `Gallery image ${file.id}`,
+          }));
+        setGalleryImages(images);
+      }
+    } catch (error) {
+      console.error('Error fetching gallery images:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <section className="gallery-section">
+        <div className="gallery-container">
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            Loading gallery...
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (galleryImages.length === 0) {
+    return null;
+  }
+
   return (
     <section className="gallery-section">
       <div className="gallery-container">
         <div className="gallery-grid">
           {galleryImages.map((image) => (
-            <Link key={image.id} href={image.href} className="gallery-item">
+            <Link key={image.id} href="#" className="gallery-item">
               <figure className="gallery-figure">
                 <Image
-                  src={image.src}
-                  alt={image.alt}
+                  src={image.url}
+                  alt={image.alt_text || `Gallery image ${image.id}`}
                   width={400}
                   height={400}
                   className="gallery-image"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (target.src !== '/images/placeholder.jpg') {
+                      target.src = '/images/placeholder.jpg';
+                    }
+                  }}
                 />
                 <div className="gallery-overlay">
                   <svg

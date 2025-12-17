@@ -23,13 +23,28 @@
 
 .related-products-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: clamp(15px, 2vw, 20px);
 }
 
-@media (min-width: 701px) {
+/* Mobile: 3 columns */
+@media (max-width: 600px) {
+  .related-products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Tablet: 4 columns */
+@media (min-width: 601px) and (max-width: 1024px) {
   .related-products-grid {
     grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Desktop: 5 columns */
+@media (min-width: 1025px) {
+  .related-products-grid {
+    grid-template-columns: repeat(5, 1fr);
     gap: clamp(20px, 3vw, 30px);
   }
 }

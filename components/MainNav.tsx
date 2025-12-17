@@ -50,6 +50,10 @@ export default function MainNav() {
               width={118}
               height={24}
               priority
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
             />
           </Link>
         </div>

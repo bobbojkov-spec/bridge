@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { query } from '@/lib/db/connection';
 
 
 // GET /api/products/[id] - Get a single product
@@ -25,10 +25,10 @@ export async function GET(
     }
 
     // Fetch product
-    const [productRows] = await pool.execute(
+    const productRows = await query<any>(
       'SELECT * FROM products WHERE id = ?',
       [productId]
-    ) as any[];
+    );
 
     console.log('🔍 GET /api/products/[id] - productRows:', JSON.stringify(productRows, null, 2));
 
@@ -44,25 +44,25 @@ export async function GET(
     console.log('🔍 GET /api/products/[id] - stock_quantity:', product.stock_quantity, typeof product.stock_quantity);
 
     // Get related data
-    const [imageRows] = await pool.execute(
-      'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY `order` ASC',
+    const imageRows = await query<any>(
+      'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY "order" ASC',
       [productId]
-    ) as any[];
+    );
 
-    const [categoryRows] = await pool.execute(
+    const categoryRows = await query<any>(
       'SELECT category_id FROM product_categories WHERE product_id = ?',
       [productId]
-    ) as any[];
+    );
 
-    const [tagRows] = await pool.execute(
+    const tagRows = await query<any>(
       'SELECT tag FROM product_tags WHERE product_id = ?',
       [productId]
-    ) as any[];
+    );
 
-    const [additionalInfoRows] = await pool.execute(
+    const additionalInfoRows = await query<any>(
       'SELECT * FROM product_additional_info WHERE product_id = ?',
       [productId]
-    ) as any[];
+    );
 
     const images = imageRows.map((row: any) => row.image_url);
     const categoryIds = categoryRows.map((row: any) => String(row.category_id));
@@ -197,7 +197,7 @@ async function handleUpdate(
     }
     if (currency !== undefined) { fields.push('currency = ?'); values.push(currency); }
     if (stockQuantity !== undefined) { fields.push('stock_quantity = ?'); values.push(stockQuantity); }
-    if (active !== undefined) { fields.push('active = ?'); values.push(active ? 1 : 0); }
+    if (active !== undefined) { fields.push('active = ?'); values.push(active); } // PostgreSQL uses boolean
     if (metaTitle !== undefined) { fields.push('meta_title = ?'); values.push(metaTitle || null); }
     if (metaDescription !== undefined) { fields.push('meta_description = ?'); values.push(metaDescription || null); }
     if (seoKeywords !== undefined) { fields.push('meta_keywords = ?'); values.push(seoKeywords || null); }
@@ -212,7 +212,7 @@ async function handleUpdate(
       console.log('💾 Executing UPDATE:', `UPDATE products SET ${fields.join(', ')} WHERE id = ?`);
       console.log('💾 Values:', values);
       try {
-        await pool.execute(
+        await query(
           `UPDATE products SET ${fields.join(', ')} WHERE id = ?`,
           values
         );
@@ -235,13 +235,13 @@ async function handleUpdate(
     // Update images if provided
     if (images !== undefined && Array.isArray(images)) {
       console.log('🖼️ Updating images:', images.length);
-      await pool.execute('DELETE FROM product_images WHERE product_id = ?', [productId]);
+      await query('DELETE FROM product_images WHERE product_id = ?', [productId]);
       if (images.length > 0) {
         const imageValues = images.map((url: string, index: number) => [productId, url, index]);
         const placeholders = imageValues.map(() => '(?, ?, ?)').join(', ');
         const flatValues = imageValues.flat();
-        await pool.execute(
-          `INSERT INTO product_images (product_id, image_url, \`order\`) VALUES ${placeholders}`,
+        await query(
+          `INSERT INTO product_images (product_id, image_url, "order") VALUES ${placeholders}`,
           flatValues
         );
         console.log('✅ Images updated:', images.length);
@@ -256,12 +256,12 @@ async function handleUpdate(
     if (categoryIds !== undefined && Array.isArray(categoryIds)) {
       console.log('📁 Updating categories:', categoryIds.length);
       const numericCategoryIds = categoryIds.map(catId => parseInt(String(catId))).filter(catId => !isNaN(catId));
-      await pool.execute('DELETE FROM product_categories WHERE product_id = ?', [productId]);
+      await query('DELETE FROM product_categories WHERE product_id = ?', [productId]);
       if (numericCategoryIds.length > 0) {
         const categoryValues = numericCategoryIds.map((catId: number) => [productId, catId]);
         const placeholders = categoryValues.map(() => '(?, ?)').join(', ');
         const flatValues = categoryValues.flat();
-        await pool.execute(
+        await query(
           `INSERT INTO product_categories (product_id, category_id) VALUES ${placeholders}`,
           flatValues
         );
@@ -275,12 +275,12 @@ async function handleUpdate(
 
     // Update tags if provided (only if it's a non-empty array)
     if (tags !== undefined && Array.isArray(tags)) {
-      await pool.execute('DELETE FROM product_tags WHERE product_id = ?', [productId]);
+      await query('DELETE FROM product_tags WHERE product_id = ?', [productId]);
       if (tags.length > 0) {
         const tagValues = tags.map((tag: string) => [productId, String(tag).toUpperCase()]);
         const placeholders = tagValues.map(() => '(?, ?)').join(', ');
         const flatValues = tagValues.flat();
-        await pool.execute(
+        await query(
           `INSERT INTO product_tags (product_id, tag) VALUES ${placeholders}`,
           flatValues
         );
@@ -294,13 +294,13 @@ async function handleUpdate(
 
     // Update additional info if provided
     if (additionalInfo !== undefined) {
-      const [existing] = await pool.execute(
+      const existing = await query<any>(
         'SELECT * FROM product_additional_info WHERE product_id = ?',
         [productId]
-      ) as any[];
+      );
       
       if (existing && existing.length > 0) {
-        await pool.execute(
+        await query(
           `UPDATE product_additional_info 
            SET weight = ?, dimensions = ?, material = ?, care_instructions = ?
            WHERE product_id = ?`,
@@ -313,7 +313,7 @@ async function handleUpdate(
           ]
         );
       } else {
-        await pool.execute(
+        await query(
           `INSERT INTO product_additional_info (product_id, weight, dimensions, material, care_instructions)
            VALUES (?, ?, ?, ?, ?)`,
           [
@@ -328,10 +328,10 @@ async function handleUpdate(
     }
 
     // Fetch updated product
-    const [updatedProductRows] = await pool.execute(
+    const updatedProductRows = await query<any>(
       'SELECT * FROM products WHERE id = ?',
       [productId]
-    ) as any[];
+    );
 
     if (!updatedProductRows || updatedProductRows.length === 0) {
       return NextResponse.json(
@@ -343,25 +343,25 @@ async function handleUpdate(
     const updatedProduct = updatedProductRows[0];
 
     // Fetch related data
-    const [productImageRows] = await pool.execute(
-      'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY `order` ASC',
+    const productImageRows = await query<any>(
+      'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY "order" ASC',
       [productId]
-    ) as any[];
+    );
 
-    const [productCategoryRows] = await pool.execute(
+    const productCategoryRows = await query<any>(
       'SELECT category_id FROM product_categories WHERE product_id = ?',
       [productId]
-    ) as any[];
+    );
 
-    const [productTagRows] = await pool.execute(
+    const productTagRows = await query<any>(
       'SELECT tag FROM product_tags WHERE product_id = ?',
       [productId]
-    ) as any[];
+    );
 
-    const [productAdditionalInfoRows] = await pool.execute(
+    const productAdditionalInfoRows = await query<any>(
       'SELECT * FROM product_additional_info WHERE product_id = ?',
       [productId]
-    ) as any[];
+    );
 
     const productImages = productImageRows.map((row: any) => row.image_url);
     const productCategoryIds = productCategoryRows.map((row: any) => String(row.category_id));
@@ -435,13 +435,13 @@ export async function DELETE(
     }
 
     // Delete related data first
-    await pool.execute('DELETE FROM product_images WHERE product_id = ?', [productId]);
-    await pool.execute('DELETE FROM product_categories WHERE product_id = ?', [productId]);
-    await pool.execute('DELETE FROM product_tags WHERE product_id = ?', [productId]);
-    await pool.execute('DELETE FROM product_additional_info WHERE product_id = ?', [productId]);
+    await query('DELETE FROM product_images WHERE product_id = ?', [productId]);
+    await query('DELETE FROM product_categories WHERE product_id = ?', [productId]);
+    await query('DELETE FROM product_tags WHERE product_id = ?', [productId]);
+    await query('DELETE FROM product_additional_info WHERE product_id = ?', [productId]);
     
     // Delete product
-    await pool.execute('DELETE FROM products WHERE id = ?', [productId]);
+    await query('DELETE FROM products WHERE id = ?', [productId]);
 
     return NextResponse.json({ message: 'Product deleted successfully' });
   } catch (error) {

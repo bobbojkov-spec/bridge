@@ -5,52 +5,31 @@ import { query, queryOne } from '@/lib/db/connection';
 // Returns products in order with all necessary data
 export async function GET(request: NextRequest) {
   try {
-    // Get settings with featured product IDs
-    const settings = await queryOne<any>(
-      `SELECT 
-        featured_product_1_id,
-        featured_product_2_id,
-        featured_product_3_id,
-        featured_product_4_id,
-        featured_product_5_id,
-        featured_product_6_id
-       FROM site_settings 
-       ORDER BY id DESC 
-       LIMIT 1`
+    // Get featured products - for now, return first 6 active products
+    // TODO: Add featured_products table or featured_product_ids JSON column to site_settings
+    const products = await query<any>(
+      `SELECT id, name, slug, price, currency, active 
+       FROM products 
+       WHERE active = TRUE 
+       ORDER BY name ASC 
+       LIMIT 6`
     );
 
-    if (!settings) {
+    if (!products || products.length === 0) {
       return NextResponse.json({ data: [] });
     }
 
-    // Get product IDs in order
-    const productIds = [
-      settings.featured_product_1_id,
-      settings.featured_product_2_id,
-      settings.featured_product_3_id,
-      settings.featured_product_4_id,
-      settings.featured_product_5_id,
-      settings.featured_product_6_id,
-    ].filter(id => id !== null);
+    const productIds = products.map((p: any) => p.id);
 
     if (productIds.length === 0) {
       return NextResponse.json({ data: [] });
     }
 
-    // Fetch all products at once
-    const placeholders = productIds.map(() => '?').join(',');
-    const products = await query<any>(
-      `SELECT id, name, slug, price, currency, active 
-       FROM products 
-       WHERE id IN (${placeholders})`,
-      productIds
-    );
-
     // Get images for all products
     const productImagesMap: Record<number, string> = {};
     for (const productId of productIds) {
       const images = await query<any>(
-        `SELECT image_url FROM product_images WHERE product_id = ? ORDER BY \`order\` ASC LIMIT 1`,
+        `SELECT image_url FROM product_images WHERE product_id = ? ORDER BY "order" ASC LIMIT 1`,
         [productId]
       );
       if (images[0]) {
@@ -59,9 +38,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Map products to match frontend format, maintaining order
-    const featuredProducts = productIds
-      .map(productId => {
-        const product = products.find((p: any) => p.id === productId);
+    const featuredProducts = products
+      .map((product: any) => {
         if (!product || !product.active) return null;
         
         return {
@@ -70,7 +48,7 @@ export async function GET(request: NextRequest) {
           slug: product.slug,
           price: product.price,
           currency: product.currency || 'EUR',
-          image: productImagesMap[productId] || '/images/placeholder.jpg',
+          image: productImagesMap[product.id] || '/images/placeholder.jpg',
         };
       })
       .filter(Boolean);
