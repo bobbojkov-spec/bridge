@@ -203,9 +203,10 @@ export default function SettingsPage() {
                     allowClear
                     showSearch
                     optionFilterProp="children"
-                    filterOption={(input, option) =>
-                      (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                    }
+                    filterOption={(input: string, option?: any) => {
+                      const label = typeof option?.label === 'string' ? option.label : String(option?.label || '');
+                      return label.toLowerCase().includes(input.toLowerCase());
+                    }}
                     loading={loading}
                   >
                     {products.map((product) => (
