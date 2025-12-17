@@ -1303,6 +1303,9 @@ interface BlockEditorProps {
 
 function BlockEditor({
   block,
+  index,
+  totalBlocks,
+  summary,
   onUpdate,
   onDelete,
   onMoveUp,

@@ -1,0 +1,9 @@
+# Copy these environment variables to Vercel Dashboard
+# Settings → Environment Variables → Add each one
+
+POSTGRES_URL=postgresql://postgres:zGEYLFqJHX504E3F@db.oohmahmtzfzpweswksuh.supabase.co:5432/postgres
+
+POSTGRES_PRISMA_URL=postgresql://postgres:zGEYLFqJHX504E3F@db.oohmahmtzfzpweswksuh.supabase.co:5432/postgres?pgbouncer=true
+
+POSTGRES_URL_NON_POOLING=postgresql://postgres:zGEYLFqJHX504E3F@db.oohmahmtzfzpweswksuh.supabase.co:5432/postgres
+
