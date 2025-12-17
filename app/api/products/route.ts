@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     const result = await getProducts(page, pageSize, filters);
 
     // Enrich products with related data (images, categories, tags)
-    let enrichedProducts = [];
+    let enrichedProducts: any[] = [];
     if (result.products && result.products.length > 0) {
       enrichedProducts = await Promise.all(
         result.products.map(async (product) => {
@@ -230,6 +230,13 @@ export async function POST(request: NextRequest) {
       getProductTags(productId),
       getProductAdditionalInfo(productId),
     ]);
+
+    if (!product) {
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       data: {

@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
 
     for (const [productId, images] of imagesByProduct.entries()) {
       for (const productImage of images) {
+        const imageUrl = productImage.image_url;
         try {
-          const imageUrl = productImage.image_url;
           
           // Skip if already in media_files (starts with /uploads/images/original/)
           if (imageUrl.startsWith('/uploads/images/original/')) {

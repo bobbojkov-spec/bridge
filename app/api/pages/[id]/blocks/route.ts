@@ -190,7 +190,6 @@ export async function POST(
       enabled,
     });
 
-    const { getPageBlocks } = await import('@/lib/db/repositories/pages');
     const allBlocks = await getPageBlocks(pageId);
     const newBlock = allBlocks.find(b => b.id === blockId);
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db/connection';
-import pool from '@/lib/db';
 
 // GET /api/settings/featured-products - Get featured products
 export async function GET(request: NextRequest) {
@@ -122,14 +121,14 @@ export async function PATCH(request: NextRequest) {
     if (existingSettings) {
       // Update existing settings
       console.log('📝 Updating existing settings...');
-      await pool.execute(
+      await query(
         `UPDATE site_settings SET
-          \`featured_product_1_id\` = ?,
-          \`featured_product_2_id\` = ?,
-          \`featured_product_3_id\` = ?,
-          \`featured_product_4_id\` = ?,
-          \`featured_product_5_id\` = ?,
-          \`featured_product_6_id\` = ?
+          "featured_product_1_id" = $1,
+          "featured_product_2_id" = $2,
+          "featured_product_3_id" = $3,
+          "featured_product_4_id" = $4,
+          "featured_product_5_id" = $5,
+          "featured_product_6_id" = $6
          WHERE id = 1`,
         productIds
       );
@@ -137,17 +136,17 @@ export async function PATCH(request: NextRequest) {
     } else {
       // Create new settings record with id = 1
       console.log('📝 Creating new settings record...');
-      await pool.execute(
+      await query(
         `INSERT INTO site_settings (
           id,
           site_name,
-          \`featured_product_1_id\`,
-          \`featured_product_2_id\`,
-          \`featured_product_3_id\`,
-          \`featured_product_4_id\`,
-          \`featured_product_5_id\`,
-          \`featured_product_6_id\`
-        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?)`,
+          "featured_product_1_id",
+          "featured_product_2_id",
+          "featured_product_3_id",
+          "featured_product_4_id",
+          "featured_product_5_id",
+          "featured_product_6_id"
+        ) VALUES (1, $1, $2, $3, $4, $5, $6, $7)`,
         [
           'Bridge',
           ...productIds,

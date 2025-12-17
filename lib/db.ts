@@ -4,7 +4,7 @@ import mysql from 'mysql2/promise';
 let pool: mysql.Pool | null = null;
 
 function createPool(): mysql.Pool {
-  return mysql.createPool({
+  const config: mysql.PoolOptions = {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3306'),
     user: process.env.DB_USER || 'root',
@@ -13,25 +13,17 @@ function createPool(): mysql.Pool {
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
-    acquireTimeout: 60000,
-    timeout: 60000,
     enableKeepAlive: true,
     keepAliveInitialDelay: 0,
-    idleTimeout: 30000,
     multipleStatements: false,
-    connectTimeout: 10000,
-  });
+  };
+  return mysql.createPool(config);
 }
 
 function getPool(): mysql.Pool {
   if (!pool) {
     console.log('🔄 Creating MySQL connection pool for bridge_db...');
     pool = createPool();
-    
-    // Handle pool errors
-    pool.on('error', (err) => {
-      console.error('❌ MySQL Pool Error:', err.code, err.message);
-    });
   }
   return pool;
 }

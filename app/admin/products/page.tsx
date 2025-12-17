@@ -202,9 +202,10 @@ export default function ProductsPage() {
 
       if (result.data && result.data.url) {
         // Only update form if the edit images modal is open
+        let newImages: string[] = [];
         if (editImagesVisible) {
           const currentImages = imagesForm.getFieldValue('images') || [];
-          const newImages = [...currentImages, result.data.url];
+          newImages = [...currentImages, result.data.url];
           imagesForm.setFieldsValue({ images: newImages });
         }
         message.success({ content: 'Image cropped and uploaded successfully', key: 'upload' });
@@ -215,9 +216,11 @@ export default function ProductsPage() {
         setCrop({ x: 0, y: 0 });
         setZoom(1);
         // Force form update to show the new image
-        setTimeout(() => {
-          imagesForm.setFieldsValue({ images: newImages });
-        }, 100);
+        if (editImagesVisible && newImages.length > 0) {
+          setTimeout(() => {
+            imagesForm.setFieldsValue({ images: newImages });
+          }, 100);
+        }
       } else {
         throw new Error(result.error || 'Upload failed');
       }

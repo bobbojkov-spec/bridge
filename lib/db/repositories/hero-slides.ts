@@ -23,26 +23,22 @@ export async function getHeroSlideById(id: number): Promise<HeroSlide | null> {
 
 // Create hero slide
 export async function createHeroSlide(slide: Omit<HeroSlide, 'id' | 'created_at' | 'updated_at'>): Promise<number> {
-  const connection = await import('../connection').then(m => m.getConnection());
-  try {
-    const [result] = await connection.execute(
-      `INSERT INTO hero_slides (title, subtitle, description, background_image, cta_text, cta_link, \`order\`, active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        slide.title,
-        slide.subtitle,
-        slide.description,
-        slide.background_image,
-        slide.cta_text,
-        slide.cta_link,
-        slide.order,
-        slide.active,
-      ]
-    ) as any;
-    return result?.insertId || 0;
-  } finally {
-    connection.release();
-  }
+  const { insertAndGetId } = await import('../connection');
+  return await insertAndGetId(
+    `INSERT INTO hero_slides (title, subtitle, description, background_image, cta_text, cta_link, "order", active)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     RETURNING id`,
+    [
+      slide.title,
+      slide.subtitle,
+      slide.description,
+      slide.background_image,
+      slide.cta_text,
+      slide.cta_link,
+      slide.order,
+      slide.active,
+    ]
+  );
 }
 
 // Update hero slide
