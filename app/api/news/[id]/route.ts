@@ -120,7 +120,7 @@ export async function PATCH(
       ctaText: updatedArticle.cta_text || '',
       ctaLink: updatedArticle.cta_link || '',
       order: updatedArticle.order || 0,
-      active: updatedArticle.active === 1 || updatedArticle.active === true,
+      active: Boolean(updatedArticle.active),
       publishStatus: updatedArticle.publish_status || 'draft',
       publishDate: updatedArticle.publish_date ? new Date(updatedArticle.publish_date).toISOString() : null,
       author: updatedArticle.author || '',
