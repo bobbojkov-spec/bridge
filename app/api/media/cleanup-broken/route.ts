@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db/connection';
 import { MediaFile } from '@/lib/db/models';
 import { join } from 'path';
-import { existsSync, unlink } from 'fs/promises';
+import { existsSync } from 'fs';
+import { unlink } from 'fs/promises';
 
 // POST /api/media/cleanup-broken - Remove broken images and their product references
 export async function POST(request: NextRequest) {
