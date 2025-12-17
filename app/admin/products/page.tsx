@@ -69,6 +69,11 @@ interface Product {
   } | null;
   metaTitle: string | null;
   metaDescription: string | null;
+  seoKeywords?: string | null;
+  ogTitle?: string | null;
+  ogDescription?: string | null;
+  ogImageUrl?: string | null;
+  canonicalUrl?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -433,7 +438,7 @@ export default function ProductsPage() {
       const currentAdditionalInfo = editingProduct?.additionalInfo || null;
       const currentMetaTitle = editingProduct?.metaTitle || null;
       const currentMetaDescription = editingProduct?.metaDescription || null;
-      const currentSeoKeywords = editingProduct?.seoKeywords || editingProduct?.metaKeywords || null;
+      const currentSeoKeywords = editingProduct?.seoKeywords || null;
       const currentOgTitle = editingProduct?.ogTitle || null;
       const currentOgDescription = editingProduct?.ogDescription || null;
       const currentCanonicalUrl = editingProduct?.canonicalUrl || null;
