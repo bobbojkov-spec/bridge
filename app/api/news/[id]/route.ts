@@ -32,7 +32,7 @@ export async function GET(
       ctaText: article.cta_text || '',
       ctaLink: article.cta_link || '',
       order: article.order || 0,
-      active: article.active === 1 || article.active === true,
+      active: Boolean(article.active),
       publishStatus: article.publish_status || 'draft',
       publishDate: article.publish_date ? new Date(article.publish_date).toISOString() : null,
       author: article.author || '',

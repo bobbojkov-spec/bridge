@@ -97,7 +97,7 @@ export async function PATCH(
       ctaText: updatedSlide.cta_text || '',
       ctaLink: updatedSlide.cta_link || '',
       order: updatedSlide.order || 0,
-      active: updatedSlide.active === 1 || updatedSlide.active === true,
+      active: Boolean(updatedSlide.active),
       createdAt: updatedSlide.created_at ? new Date(updatedSlide.created_at).toISOString() : new Date().toISOString(),
       updatedAt: updatedSlide.updated_at ? new Date(updatedSlide.updated_at).toISOString() : new Date().toISOString(),
     };

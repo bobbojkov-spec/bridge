@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
               price: priceValue, // Number, not string
               currency: String(product.currency || 'EUR'),
               stockQuantity: stockValue, // Number, not string
-              active: product.active === 1 || product.active === true || product.active === '1',
+              active: Boolean(product.active),
               metaTitle: product.meta_title ? String(product.meta_title) : null,
               metaDescription: product.meta_description ? String(product.meta_description) : null,
               images: Array.isArray(images) && images.length > 0 ? images.map(img => String(img.image_url)) : [],
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
               price: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
               currency: product.currency || 'EUR',
               stockQuantity: product.stock_quantity || 0,
-              active: product.active === 1 || product.active === true,
+              active: Boolean(product.active),
               images: [],
               categoryIds: [],
               tags: [],

@@ -74,7 +74,7 @@ export async function GET(
         ...product,
         id: String(product.id),
         price: typeof product.price === 'number' ? product.price : parseFloat(product.price || '0'),
-        active: product.active === 1 || product.active === true,
+        active: Boolean(product.active),
         stockQuantity: product.stock_quantity !== null && product.stock_quantity !== undefined 
           ? Number(product.stock_quantity) 
           : 0,
@@ -373,7 +373,7 @@ async function handleUpdate(
         ...updatedProduct,
         id: String(updatedProduct.id),
         price: typeof updatedProduct.price === 'number' ? updatedProduct.price : parseFloat(updatedProduct.price || '0'),
-        active: updatedProduct.active === 1 || updatedProduct.active === true,
+        active: Boolean(updatedProduct.active),
         images: productImages,
         categoryIds: productCategoryIds,
         tags: productTags,
