@@ -8,7 +8,13 @@ export async function GET() {
     
     if (!isConnected) {
       return NextResponse.json(
-        { error: 'Database connection failed', connected: false },
+        { 
+          error: 'Database connection failed', 
+          connected: false,
+          hasPostgresUrl: !!process.env.POSTGRES_URL,
+          isVercel: !!process.env.VERCEL,
+          nodeEnv: process.env.NODE_ENV,
+        },
         { status: 500 }
       );
     }
@@ -23,12 +29,19 @@ export async function GET() {
       products: products[0]?.count || 0,
       categories: categories[0]?.count || 0,
       message: 'Database connection successful',
+      hasPostgresUrl: !!process.env.POSTGRES_URL,
+      isVercel: !!process.env.VERCEL,
+      nodeEnv: process.env.NODE_ENV,
     });
   } catch (error: any) {
     return NextResponse.json(
       {
         connected: false,
         error: error?.message || 'Unknown error',
+        code: error?.code,
+        hasPostgresUrl: !!process.env.POSTGRES_URL,
+        isVercel: !!process.env.VERCEL,
+        nodeEnv: process.env.NODE_ENV,
         details: process.env.NODE_ENV === 'development' ? error?.stack : undefined,
       },
       { status: 500 }
