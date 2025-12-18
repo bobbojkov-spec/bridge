@@ -18,37 +18,43 @@ function getConnectionConfig() {
   
   // Parse connection string or use defaults
   try {
-    const httpLikeUrl = new URL(postgresUrl.replace('postgresql://', 'http://'));
-    const hostname = httpLikeUrl.hostname;
+    const url = new URL(postgresUrl.replace('postgresql://', 'http://'));
+    const hostname = url.hostname;
     const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
-    const isSupabase = hostname.includes('supabase.co') || hostname.includes('supabase.com');
+    const isVercel = !!process.env.VERCEL;
 
     // For Supabase and production, use SSL with proper configuration
     // For localhost, skip SSL
-    let sslConfig;
+    let sslConfig: any;
     if (isLocalHost) {
       sslConfig = undefined;
     } else {
       // For Supabase and other hosted providers, require SSL
-      // Use rejectUnauthorized: false to handle certificate chain issues in Vercel
-      // This is necessary because Vercel's Node.js environment may have certificate chain issues
+      // In Vercel/production, we must use rejectUnauthorized: false
+      // because Vercel's Node.js environment has certificate chain validation issues
       sslConfig = { 
         rejectUnauthorized: false
       };
     }
 
-    // Use object format instead of connectionString to ensure SSL config is applied
-    const url = new URL(postgresUrl.replace('postgresql://', 'http://'));
-    
-    return {
+    // Parse connection string components
+    const config: any = {
       host: url.hostname,
       port: parseInt(url.port) || 5432,
       database: url.pathname.slice(1) || 'postgres',
-      user: url.username || 'postgres',
-      password: url.password || '',
-      ssl: sslConfig,
+      user: decodeURIComponent(url.username || 'postgres'),
+      password: decodeURIComponent(url.password || ''),
     };
-  } catch {
+
+    // Always set SSL config for non-localhost connections
+    // This ensures SSL is properly configured in production
+    if (!isLocalHost) {
+      config.ssl = sslConfig;
+    }
+
+    return config;
+  } catch (error) {
+    console.error('Error parsing connection string:', error);
     return {
       host: 'localhost',
       port: 5432,
@@ -65,7 +71,13 @@ let pool: Pool | null = null;
 function getPool(): Pool {
   if (!pool) {
     const config = getConnectionConfig();
-    console.log('🔌 Creating Supabase connection pool...');
+    console.log('🔌 Creating Supabase connection pool...', {
+      host: config.host,
+      database: config.database,
+      hasSSL: !!config.ssl,
+      sslConfig: config.ssl,
+      isVercel: !!process.env.VERCEL,
+    });
     pool = new Pool(config);
     setupPoolErrorHandler(pool);
   }
