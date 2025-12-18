@@ -50,16 +50,23 @@ function getConnectionConfig() {
     } else {
       // Production/Supabase - require SSL with relaxed certificate validation
       // This is necessary for Vercel's Node.js environment
-      return {
+      // Try using connectionString with SSL config for better compatibility
+      const config: any = {
         host: url.hostname,
         port: parseInt(url.port) || 5432,
         database: url.pathname.slice(1) || 'postgres',
         user: decodeURIComponent(url.username || 'postgres'),
         password: decodeURIComponent(url.password || ''),
-        ssl: {
-          rejectUnauthorized: false
-        }
       };
+      
+      // Set SSL configuration - critical for Supabase in Vercel
+      config.ssl = {
+        rejectUnauthorized: false,
+        // Additional SSL options for better compatibility
+        require: true,
+      };
+      
+      return config;
     }
   } catch (error) {
     console.error('Error parsing connection string:', error);
