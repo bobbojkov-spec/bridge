@@ -1,9 +1,9 @@
 // Database connection - PostgreSQL version
 // This file has been migrated from MySQL to PostgreSQL
-// Uses local PostgreSQL for development, can switch to Supabase for production
+// Uses Supabase for both development and production
 
-// Use local PostgreSQL for development (switch to connection-pg for Supabase/production)
-import { query as pgQuery, queryOne as pgQueryOne, insertAndGetId as pgInsertAndGetId } from './connection-pg-local';
+// Use Supabase PostgreSQL connection
+import { query as pgQuery, queryOne as pgQueryOne, insertAndGetId as pgInsertAndGetId } from './connection-pg';
 
 // Re-export PostgreSQL functions with MySQL-compatible names
 export const query = pgQuery;
@@ -38,7 +38,7 @@ export async function queryWithInsertId<T = any>(
 // Test database connection
 export async function testConnection(): Promise<boolean> {
   try {
-    const { testConnection: pgTest } = await import('./connection-pg-local');
+    const { testConnection: pgTest } = await import('./connection-pg');
     return await pgTest();
   } catch (error) {
     console.error('Database connection failed:', error);
