@@ -10,18 +10,31 @@ if (typeof window === 'undefined') {
 // Create connection pool using POSTGRES_URL from environment (Supabase)
 // This works with both Supabase and local PostgreSQL
 function getConnectionConfig() {
+  const isVercel = !!process.env.VERCEL;
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  // In production/Vercel, POSTGRES_URL is required (no localhost fallback)
+  if ((isVercel || isProduction) && !process.env.POSTGRES_URL) {
+    throw new Error(
+      'POSTGRES_URL environment variable is required in production. ' +
+      'Please set it in Vercel Dashboard → Settings → Environment Variables. ' +
+      'Get your connection string from Supabase Dashboard → Settings → Database.'
+    );
+  }
+  
+  // In development, allow localhost fallback
   const postgresUrl = process.env.POSTGRES_URL || 'postgresql://localhost:5432/bridge_db';
   
   if (!process.env.POSTGRES_URL) {
-    console.warn('⚠️  POSTGRES_URL not found in environment variables');
+    console.warn('⚠️  POSTGRES_URL not found, using localhost fallback (development only)');
   }
   
-  // Parse connection string or use defaults
+  // Parse connection string
   try {
     const url = new URL(postgresUrl.replace('postgresql://', 'http://'));
     const hostname = url.hostname;
     const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
-    const isVercel = !!process.env.VERCEL;
+    const isSupabase = hostname.includes('supabase.co') || hostname.includes('supabase.com');
 
     // For Supabase and production, use SSL with proper configuration
     // For localhost, skip SSL
@@ -50,6 +63,14 @@ function getConnectionConfig() {
     }
   } catch (error) {
     console.error('Error parsing connection string:', error);
+    // Only allow localhost fallback in development
+    if (isVercel || isProduction) {
+      throw new Error(
+        `Failed to parse POSTGRES_URL: ${error instanceof Error ? error.message : String(error)}. ` +
+        'Please check your connection string format in Vercel environment variables.'
+      );
+    }
+    // Development fallback
     return {
       host: 'localhost',
       port: 5432,
