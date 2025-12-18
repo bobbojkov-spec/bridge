@@ -1,9 +1,20 @@
 import { Pool } from 'pg';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load .env.local explicitly (Next.js should do this, but ensure it's loaded)
+if (typeof window === 'undefined') {
+  config({ path: resolve(process.cwd(), '.env.local') });
+}
 
 // Create connection pool using POSTGRES_URL from environment (Supabase)
 // This works with both Supabase and local PostgreSQL
 function getConnectionConfig() {
   const postgresUrl = process.env.POSTGRES_URL || 'postgresql://localhost:5432/bridge_db';
+  
+  if (!process.env.POSTGRES_URL) {
+    console.warn('⚠️  POSTGRES_URL not found in environment variables');
+  }
   
   // Parse connection string or use defaults
   try {
@@ -27,21 +38,33 @@ function getConnectionConfig() {
   }
 }
 
-// Create connection pool
-const pool = new Pool(getConnectionConfig());
+// Create connection pool lazily to ensure env vars are loaded
+let pool: Pool | null = null;
 
-// Handle pool errors
-pool.on('error', (err) => {
-  console.error('❌ PostgreSQL Pool Error:', err.message);
-});
+function getPool(): Pool {
+  if (!pool) {
+    const config = getConnectionConfig();
+    console.log('🔌 Creating Supabase connection pool...');
+    pool = new Pool(config);
+    setupPoolErrorHandler(pool);
+  }
+  return pool;
+}
 
-// PostgreSQL connection using Vercel Postgres
-// This works with Supabase and other PostgreSQL databases via connection string
+// Handle pool errors (set after pool creation)
+function setupPoolErrorHandler(p: Pool) {
+  p.on('error', (err) => {
+    console.error('❌ PostgreSQL Pool Error:', err.message);
+  });
+}
+
+// PostgreSQL connection using Supabase
+// This project now uses Supabase exclusively (no local PostgreSQL)
 // 
 // Environment variables needed:
-// - POSTGRES_URL (connection string from Supabase/Vercel)
-// - POSTGRES_PRISMA_URL (optional, for Prisma)
-// - POSTGRES_URL_NON_POOLING (optional, for migrations)
+// - POSTGRES_URL (connection string from Supabase)
+//   Set automatically when connecting Vercel with Supabase
+//   Or manually: postgresql://postgres:[PASSWORD]@[PROJECT].supabase.co:5432/postgres
 
 // Convert MySQL query to PostgreSQL
 function convertMySQLToPostgreSQL(sqlQuery: string, params?: any[]): { query: string; pgParams: any[] } {
@@ -89,7 +112,7 @@ export async function query<T = any>(
     const { query: pgQuery, pgParams } = convertMySQLToPostgreSQL(sqlQuery, params);
     
     // Execute query using the pool
-    const result = await pool.query(pgQuery, pgParams);
+    const result = await getPool().query(pgQuery, pgParams);
     
     // If query expects insertId (MySQL pattern), add it to the result
     // This handles cases where code expects { insertId: number } in the result

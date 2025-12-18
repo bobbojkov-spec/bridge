@@ -128,8 +128,8 @@ export async function updateProduct(id: number, product: Partial<Omit<Product, '
   Object.entries(product).forEach(([key, value]) => {
     if (value !== undefined) {
       // PostgreSQL uses boolean, not int
-      fields.push(`${key} = ?`);
-      values.push(value);
+        fields.push(`${key} = ?`);
+        values.push(value);
     }
   });
 
