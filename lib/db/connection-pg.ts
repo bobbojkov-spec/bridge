@@ -21,12 +21,32 @@ function getConnectionConfig() {
     const httpLikeUrl = new URL(postgresUrl.replace('postgresql://', 'http://'));
     const hostname = httpLikeUrl.hostname;
     const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const isSupabase = hostname.includes('supabase.co') || hostname.includes('supabase.com');
 
+    // For Supabase and production, use SSL with proper configuration
+    // For localhost, skip SSL
+    let sslConfig;
+    if (isLocalHost) {
+      sslConfig = undefined;
+    } else {
+      // For Supabase and other hosted providers, require SSL
+      // Use rejectUnauthorized: false to handle certificate chain issues in Vercel
+      // This is necessary because Vercel's Node.js environment may have certificate chain issues
+      sslConfig = { 
+        rejectUnauthorized: false
+      };
+    }
+
+    // Use object format instead of connectionString to ensure SSL config is applied
+    const url = new URL(postgresUrl.replace('postgresql://', 'http://'));
+    
     return {
-      connectionString: postgresUrl,
-      // Supabase (and most hosted Postgres providers) require TLS connections.
-      // Allow self-signed certs while developing locally against Supabase.
-      ssl: isLocalHost ? undefined : { rejectUnauthorized: false },
+      host: url.hostname,
+      port: parseInt(url.port) || 5432,
+      database: url.pathname.slice(1) || 'postgres',
+      user: url.username || 'postgres',
+      password: url.password || '',
+      ssl: sslConfig,
     };
   } catch {
     return {
@@ -34,6 +54,7 @@ function getConnectionConfig() {
       port: 5432,
       database: 'bridge_db',
       user: process.env.USER || 'postgres',
+      ssl: undefined,
     };
   }
 }
