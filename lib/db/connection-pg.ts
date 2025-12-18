@@ -60,10 +60,9 @@ function getConnectionConfig() {
       };
       
       // Set SSL configuration - critical for Supabase in Vercel
+      // rejectUnauthorized: false allows self-signed certificates in the chain
       config.ssl = {
-        rejectUnauthorized: false,
-        // Additional SSL options for better compatibility
-        require: true,
+        rejectUnauthorized: false
       };
       
       return config;
