@@ -25,34 +25,29 @@ function getConnectionConfig() {
 
     // For Supabase and production, use SSL with proper configuration
     // For localhost, skip SSL
-    let sslConfig: any;
     if (isLocalHost) {
-      sslConfig = undefined;
+      // Local development - no SSL needed
+      return {
+        host: url.hostname,
+        port: parseInt(url.port) || 5432,
+        database: url.pathname.slice(1) || 'postgres',
+        user: decodeURIComponent(url.username || 'postgres'),
+        password: decodeURIComponent(url.password || ''),
+      };
     } else {
-      // For Supabase and other hosted providers, require SSL
-      // In Vercel/production, we must use rejectUnauthorized: false
-      // because Vercel's Node.js environment has certificate chain validation issues
-      sslConfig = { 
-        rejectUnauthorized: false
+      // Production/Supabase - require SSL with relaxed certificate validation
+      // This is necessary for Vercel's Node.js environment
+      return {
+        host: url.hostname,
+        port: parseInt(url.port) || 5432,
+        database: url.pathname.slice(1) || 'postgres',
+        user: decodeURIComponent(url.username || 'postgres'),
+        password: decodeURIComponent(url.password || ''),
+        ssl: {
+          rejectUnauthorized: false
+        }
       };
     }
-
-    // Parse connection string components
-    const config: any = {
-      host: url.hostname,
-      port: parseInt(url.port) || 5432,
-      database: url.pathname.slice(1) || 'postgres',
-      user: decodeURIComponent(url.username || 'postgres'),
-      password: decodeURIComponent(url.password || ''),
-    };
-
-    // Always set SSL config for non-localhost connections
-    // This ensures SSL is properly configured in production
-    if (!isLocalHost) {
-      config.ssl = sslConfig;
-    }
-
-    return config;
   } catch (error) {
     console.error('Error parsing connection string:', error);
     return {
@@ -60,7 +55,6 @@ function getConnectionConfig() {
       port: 5432,
       database: 'bridge_db',
       user: process.env.USER || 'postgres',
-      ssl: undefined,
     };
   }
 }
