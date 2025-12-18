@@ -67,13 +67,29 @@ function getPool(): Pool {
     const config = getConnectionConfig();
     console.log('🔌 Creating Supabase connection pool...', {
       host: config.host,
+      port: config.port,
       database: config.database,
+      user: config.user,
+      hasPassword: !!config.password,
       hasSSL: !!config.ssl,
       sslConfig: config.ssl,
       isVercel: !!process.env.VERCEL,
+      nodeEnv: process.env.NODE_ENV,
+      hasPostgresUrl: !!process.env.POSTGRES_URL,
     });
+    
+    // Add error handler before creating pool
     pool = new Pool(config);
     setupPoolErrorHandler(pool);
+    
+    // Add connection error handler
+    pool.on('error', (err) => {
+      console.error('❌ Pool error:', {
+        message: err.message,
+        code: err.code,
+        stack: err.stack,
+      });
+    });
   }
   return pool;
 }
