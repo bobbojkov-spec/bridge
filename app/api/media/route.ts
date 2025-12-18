@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMediaFiles, createMediaFile } from '@/lib/db/repositories/media';
-import { processImage } from '@/lib/media/processor';
+import { processImageToSupabase } from '@/lib/media/processor-supabase';
+import { STORAGE_BUCKETS } from '@/lib/supabase/client';
 import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from '@/lib/media/config';
 import { query } from '@/lib/db/connection';
 import { MediaFile } from '@/lib/db/models';
@@ -108,10 +109,15 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     
-    // Process image (generate all sizes)
-    const processed = await processImage(buffer, uniqueFilename, mimeType);
+    // Process image and upload to Supabase Storage (generate all sizes)
+    const processed = await processImageToSupabase(
+      buffer,
+      uniqueFilename,
+      mimeType,
+      STORAGE_BUCKETS.MEDIA_LIBRARY
+    );
 
-    // Save to database
+    // Save to database with Supabase Storage URLs
     const mediaId = await createMediaFile({
       filename: uniqueFilename,
       url: processed.original.url,
@@ -144,9 +150,19 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error creating media file:', error);
+    console.error('❌ Error creating media file:', error);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack');
+    console.error('❌ Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+      cause: error instanceof Error ? error.cause : undefined,
+    });
     return NextResponse.json(
-      { error: 'Failed to create media file', details: error instanceof Error ? error.message : String(error) },
+      { 
+        error: 'Failed to create media file', 
+        details: error instanceof Error ? error.message : String(error),
+        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined,
+      },
       { status: 500 }
     );
   }

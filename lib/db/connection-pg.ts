@@ -148,31 +148,87 @@ export async function queryOne<T = any>(
   return results.length > 0 ? results[0] : null;
 }
 
+// Helper function to fix sequence for a table
+async function fixSequenceForTable(tableName: string): Promise<void> {
+  try {
+    // Get the maximum ID from the table
+    const maxResult = await getPool().query<{ max: number }>(
+      `SELECT COALESCE(MAX(id), 0) as max FROM ${tableName}`
+    );
+    
+    const maxId = maxResult.rows[0]?.max || 0;
+    const nextId = maxId + 1;
+    
+    // Reset the sequence
+    const sequenceName = `${tableName}_id_seq`;
+    await getPool().query(
+      `SELECT setval('${sequenceName}', ${nextId}, false)`
+    );
+    
+    console.log(`✅ Fixed sequence ${sequenceName} to ${nextId}`);
+  } catch (seqError: any) {
+    // If sequence doesn't exist, that's okay - it might be created automatically
+    if (!seqError?.message?.includes('does not exist')) {
+      console.error(`⚠️  Could not fix sequence for ${tableName}:`, seqError?.message);
+    }
+  }
+}
+
 // Execute insert and return the inserted ID (PostgreSQL style)
 export async function insertAndGetId(
   sqlQuery: string,
   params?: any[]
 ): Promise<number> {
   try {
-    // Add RETURNING id to the query
+    // Add RETURNING id to the query (at the END, after VALUES clause)
     let insertQuery = sqlQuery.trim();
     if (!insertQuery.toUpperCase().includes('RETURNING')) {
-      // Find the INSERT statement and add RETURNING id
-      insertQuery = insertQuery.replace(/INSERT\s+INTO\s+(\w+)/i, (match, tableName) => {
-        return `${match} RETURNING id`;
-      });
+      // Add RETURNING id at the end of the INSERT statement
+      // This handles: INSERT INTO table (...) VALUES (...) or INSERT INTO table (...) SELECT ...
+      insertQuery = insertQuery.replace(/;?\s*$/i, '') + ' RETURNING id';
     }
     
     const { query: pgQuery, pgParams } = convertMySQLToPostgreSQL(insertQuery, params);
-    const result = await pool.query(pgQuery.trim(), pgParams);
+    const result = await getPool().query(pgQuery.trim(), pgParams);
     
     if (result.rows && result.rows.length > 0) {
       return result.rows[0].id;
     }
     return 0;
   } catch (error: any) {
+    // Handle duplicate key error (sequence out of sync)
+    if (error?.code === '23505' && error?.constraint?.endsWith('_pkey')) {
+      // Extract table name from error or SQL query
+      const tableName = error?.table || sqlQuery.match(/INSERT\s+INTO\s+["`]?(\w+)["`]?/i)?.[1];
+      
+      if (tableName) {
+        console.log(`⚠️  Sequence out of sync for ${tableName}, attempting to fix...`);
+        await fixSequenceForTable(tableName);
+        
+        // Retry the insert once
+        try {
+          let insertQuery = sqlQuery.trim();
+          if (!insertQuery.toUpperCase().includes('RETURNING')) {
+            insertQuery = insertQuery.replace(/;?\s*$/i, '') + ' RETURNING id';
+          }
+          
+          const { query: pgQuery, pgParams } = convertMySQLToPostgreSQL(insertQuery, params);
+          const result = await getPool().query(pgQuery.trim(), pgParams);
+          
+          if (result.rows && result.rows.length > 0) {
+            console.log(`✅ Insert succeeded after sequence fix`);
+            return result.rows[0].id;
+          }
+        } catch (retryError: any) {
+          console.error('❌ Insert failed even after sequence fix:', retryError?.message);
+          throw retryError;
+        }
+      }
+    }
+    
     console.error('Insert error:', {
       sql: sqlQuery.substring(0, 100),
+      convertedSql: convertMySQLToPostgreSQL(sqlQuery.trim() + ' RETURNING id', params).query.substring(0, 150),
       message: error?.message,
     });
     throw error;
